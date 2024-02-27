@@ -1,0 +1,523 @@
+﻿@using AnalyticsAPI.Models;
+@using Newtonsoft.Json;
+@model SalesAnalytics.Web.Dashboard.Models.SalesRepsDashDataViewModel
+@{
+    ViewBag.Title = "Sales Team";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@{
+    var modelSiteData = JsonConvert.SerializeObject(Model.Site_Card);
+    var testData = JsonConvert.SerializeObject(Model.TotalAccounts_MixedChart);
+    string displayCurrentUser = Model.CurrentUser != null ? Model.CurrentUser.Replace(">", "<") : string.Empty;
+    string find = ".";
+    int lastIndex = displayCurrentUser.LastIndexOf(find);
+
+    if (lastIndex != -1)
+    {
+        string beginString = displayCurrentUser.Substring(0, lastIndex);
+        string endString = displayCurrentUser.Substring(lastIndex + find.Length);
+
+        displayCurrentUser = beginString + " " + endString;
+    }
+}
+
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="col-md-6">
+            @if (!string.IsNullOrEmpty(Model.CurrentUser) &&  (Model.CurrentUser.Contains("<") || Model.CurrentUser.Contains(">")))
+            {
+                <a class="dx-icon dx-icon-arrowleft nav-back-arrow" onclick="history.back();"></a>
+            }
+            <p class="CurrentUser">@displayCurrentUser</p>
+        </div>
+        <div class="col-md-6 sales-team-btn-wrap">
+            <div class="refresh-btn-section">
+                @(Html.DevExtreme().Button().ID("btnRefresh").Icon("refresh").OnClick("btnFiltersClick").AccessKey("Close"))
+            </div>
+        </div>
+    </div>
+</div>
+@*<div class="row">
+    <div class="col-md-12 filter-btn-div">
+        <table class="tbl-filter-btn to-right">
+            <tr class="btn-tr">
+                <td>
+                    @(Html.DevExtreme().Button().ID("btnRefresh").Icon("refresh").OnClick("btnFiltersClick").AccessKey("Close"))
+                </td>
+            </tr>
+        </table>
+    </div>
+</div>*@
+<div class="row">
+    <div class="col-md-12">
+        <div class="const-tbl summary-chart-cls">
+            <table class="full-width-tbl">
+                <tr>
+                    <td>
+                        <label class="value1" id="cntTotalSalesOpps"></label>
+                    </td>
+                    <td>
+                        <label class="value1" id="cntHRSalesOpps"></label>
+                    </td>
+                    <td>
+                        <label class="value1" id="cntNoProposals"></label>
+                    </td>
+                    <td>
+                        <label class="value1" id="cntHRProposals"></label>
+                    </td>
+                    <td>
+                        <label class="value1" id="cntNoAccounts"></label>
+                    </td>
+                    <td>
+                        <label class="value1" id="cntSiteCities"></label>
+                    </td>
+                    <td>
+                        <label class="value1" id="cntNoSite"></label>
+                    </td>
+                    <td>
+                        <label class="value1" id="cntTotalLegacyQty"></label>
+                    </td>
+                    <td>
+                        <label class="value1" id="cntTotalSalesReps"></label>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label class="text">Sales Opportunity</label>
+                    </td>
+                    <td>
+                        <label class="text">High Ranking Sales Opportunity</label>
+                    </td>
+                    <td>
+                        <label class="text">Proposals</label>
+                    </td>
+                    <td>
+                        <label class="text">High Ranking Proposals</label>
+                    </td>
+                    <td>
+                        <label class="text">Accounts</label>
+                    </td>
+                    <td>
+                        <label class="text">Sites Cities</label>
+                    </td>
+                    <td>
+                        <label class="text">Sites</label>
+                    </td>
+                    <td>
+                        <label class="text">Legacy Products</label>
+                    </td>
+                    <td>
+                        <label class="text">Sales Reps</label>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+</div>
+<div class="row no-margin top-pad-title">
+    <div class="col-md-12 no-margin">
+        <div class="col-md-3 wdght-div">
+            <div class="chart-wrap-div">
+
+
+                @(Html.DevExtreme().PieChart().ID("proposalspipeline").Size(sz => sz.Height(415))
+        .Type(PieChartType.Doughnut)
+        .Palette(VizPalette.SoftPastel)
+        .DataSource(Model.Pipeline_Pie)
+        .InnerRadius(1)
+        .ResolveLabelOverlapping(PieChartResolveLabelOverlapping.Shift)
+        .Tooltip(tl => tl
+                       .Enabled(true)
+                       .CustomizeTooltip("proposalsToolTipHtml")
+        ) // end of Tooltip
+        .Legend(lgnd => lgnd
+                        .HorizontalAlignment(HorizontalAlignment.Center)
+                        .VerticalAlignment(VerticalEdge.Bottom)
+                        .Visible(true)
+        ) // end of Legend
+        .Series(sr => sr
+                      .Add().ArgumentField("ProposalSFDCStatus")
+                      .ValueField("NoProposals")
+                      .TagField("Tag")
+                      .Label(lbl => lbl.Visible(true)
+                                       .Connector(cn => cn.Visible(true).Width(0.5))
+                                       .Position(PieChartLabelPosition.Outside)
+                                       .CustomizeText(@<text>
+                                        function (arg) {
+                                        return arg.percentText
+                                        }
+                                    </text>)
+                      ) // end of Label
+        ) // end of Series
+        .OnPointClick("proposalsOnPointClick")
+        .Title(tlProposa => tlProposa
+                                    .Text("Pipeline")
+                                    .Font(fntTitle => fntTitle.Weight(800).Size(13))
+
+                )// end of Title
+                )
+            </div>
+        </div>
+        <div class="col-md-5 wdght-div">
+            <div class="chart-wrap-div">
+
+
+                @(Html.DevExtreme().Chart().ID("topaccounts")
+        .Palette(VizPalette.SoftPastel)
+.DataSource(Model.SalesTeamOpp_StackedBar).Size(sz => sz.Height(415))
+.PointSelectionMode(ChartElementSelectionMode.Multiple)
+.CommonSeriesSettings(cs =>
+                  cs.ArgumentField("SalesRepName")
+                    .ValueField("Proposals")
+                    .SelectionMode(ChartSeriesSelectionMode.OnlyPoint)
+                    .HoverMode(ChartSeriesHoverMode.OnlyPoint)
+                    .TagField("Tag")
+                    .Type(SeriesType.StackedBar)
+                )
+.SeriesTemplate(sr => sr.NameField("Rank")
+.CustomizeSeries(@<text>
+                        function (valueFromNameField) {
+                        //return valueFromNameField === "Total Sales Opp" ? { type: "spline", valueField: "TotalSalesOpp", axis: "SalesOpp", color: '#60a69f' } : {};
+                        return valueFromNameField === "Total Sales Opp" ? { type: "spline", axis:"SalesOpp", valueField : "TotalSalesOpp"} : { type: "stackedbar", valueField : "Proposals",argumentField:"SalesRepName"};
+                        }
+        </text>)
+    ) // end of SeriesTemplate
+    .ArgumentAxis(ax => ax.Label(lbl => lbl.DisplayMode(ChartLabelDisplayMode.Rotate)
+                                            .RotationAngle(-70)
+                                            .Font(fnt => fnt.Size(10)))
+    )// end of ArgumentAxis
+    .ValueAxis(vx =>
+    {
+        vx.Add().Name("AccountNo").Title(t => t.Text("Total Proposals").Font(f => f.Size(12)))
+                            .Label(lbl => lbl.Format("thousands")
+                                             .CustomizeText(@<text>
+                                function (arg) {
+
+                                return ((arg.value).toLocaleString('en-US'));
+                                }
+                                            </text>))
+                                    .ValueType(ChartDataType.Numeric);
+
+vx.Add().Name("SalesOpp").ValueType(ChartDataType.Numeric)
+.ShowZero(true)
+.Position(Position.Right)
+.Title(ttl => ttl.Text("Total Sales Opportunity").Font(ftnt => ftnt.Size(12)))
+.Label(lbl2 => lbl2.CustomizeText(@<text>
+                                                function (arg) {
+
+                                                return  '$' + ((arg.value / 1000).toLocaleString('en-US')) + 'K';
+                                                }
+        </text>).OverlappingBehavior(OverlappingBehavior.Rotate));
+    })// end of ValueAxis
+
+        .Tooltip(tl => tl.Enabled(true)
+                         .CustomizeTooltip("topaccountsToolTipHtml"))//end tooltip
+      .Legend(lgnd => lgnd.Visible(true)
+                          .HorizontalAlignment(HorizontalAlignment.Center)
+                          .VerticalAlignment(VerticalEdge.Bottom)
+                          .Orientation(Orientation.Horizontal)
+                          .RowCount(1)
+                          .ColumnItemSpacing(5)
+                          .Position(RelativePosition.Outside))//end legend
+     .Title(mttl => mttl.Text("Sales Reps")
+                        .Font(fnt => fnt.Weight(800)
+                                        .Size(13))
+                    )//end title
+    .OnArgumentAxisClick("topAccountsArgClicked")
+    .OnPointClick("topAccountsOnPointClick")
+
+
+                )
+            </div>
+
+        </div>
+        <div class="col-md-4 wdght-div">
+            <div class="chart-wrap-div">
+
+
+                @(Html.DevExtreme().Chart().ID("totalAccounts")
+        .Palette(VizPalette.SoftPastel)
+        .PointSelectionMode(ChartElementSelectionMode.Multiple)
+                    .DataSource(Model.TotalAccounts_MixedChart).Size(sz => sz.Height(415))
+                    .CommonSeriesSettings(s => s
+                        .ArgumentField("AccountIndustry")
+                        .HoverMode(ChartSeriesHoverMode.OnlyPoint)
+                        .SelectionMode(ChartSeriesSelectionMode.OnlyPoint)
+                        .TagField("Tag")
+                        .ValueField("NoAccounts")
+                        .Type(SeriesType.StackedBar)
+                    )
+                    //.Series(s =>
+                    //{
+                    //    //s.Add().Name("Compute Value");
+                    //    //s.Add().Name("Compute Volume");
+                    //    //s.Add().Name("Storage");
+                    //    s.Add().Axis("total").Type(SeriesType.Spline).ValueField("TotalLegacyQty").Name("Legacy Qty").Color("#008fd8");
+                    //})
+                    //.SeriesTemplate(stmpl => stmpl.NameField("LegacyBU").CustomizeSeries("seriesTemplateData")
+                    //)// end of SeriesTemplate
+                    .SeriesTemplate(t => t
+                        .NameField("LegacyBU")
+                        .CustomizeSeries(@<text>
+                            function(valueFromNameField) {
+                            return valueFromNameField === "LegacyQty" ? { type: "spline",axis:"total", valueField : "TotalLegacyQty"} : { type: "stackedbar", valueField : "NoAccounts",argumentField:"AccountIndustry"};
+                            }
+                        </text>)
+                    )
+                    .ArgumentAxis(ar => ar.Label(lbl => lbl.DisplayMode(ChartLabelDisplayMode.Rotate)
+                                                            .RotationAngle(-70)
+                                                            .Font(fnt => fnt.Size(10)))
+                    )// end of ArgumentAxis
+                .ValueAxis(va =>
+                {
+                    va.Add().Grid(g => g.Visible(true));
+
+                    va.Add().Name("total").Position(Position.Right).Grid(g => g.Visible(true))
+                                       .Title(tl2 => tl2
+                                                     .Text("Total Legacy Quantity")
+                                                     .Font(fnt2 => fnt2.Size(12)))
+                                                     .Label(lbl => lbl.CustomizeText(@<text>
+                                                        function (arg) {
+                                                        return ((arg.value / 1000).toLocaleString('en-US')) + 'K';
+                                                        }
+                                                    </text>));
+                    va.Add().Name("Counts").Position(Position.Left).Label(lbl2 => lbl2.Format("fixedPoint"))
+                                          .ValueType(ChartDataType.Numeric)
+                                          .Title(tl2 => tl2.Text("Total Accounts").Font(fnt2 => fnt2.Size(12)))
+                                          .Label(lbl => lbl.CustomizeText(@<text>
+                                            function (arg) {
+                                            return (arg.value).toLocaleString('en-US');
+                                            }
+                                        </text>));
+                }
+                )// end of ValueAxis
+                .Legend(lgnd => lgnd
+                                .Visible(true)
+                                .HorizontalAlignment(HorizontalAlignment.Center)
+                                .VerticalAlignment(VerticalEdge.Bottom)
+                                .Orientation(Orientation.Horizontal)
+                                .Position(RelativePosition.Outside)
+                ) //end of Legend
+                .Tooltip(tl => tl
+                                .Enabled(true)
+                                .CustomizeTooltip("expiringContractsChartToolTipHtml")
+                ) // end of Tooltip
+                .Title(tlExpiring => tlExpiring
+                                    .Text("Top Industries")
+                                    .Font(fntTitle => fntTitle.Weight(800).Size(13))
+        )// end of Title
+        .OnPointClick("expiringContractsChartOnPointClick")
+        .OnArgumentAxisClick("expiringContractsChartOnArgumentAxisClick")
+                )
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row no-margin">
+    <div class="col-md-12 no-margin">
+        <div class="col-md-3 wdght-div">
+            <div class="chart-wrap-div">
+                @(Html.DevExtreme().PieChart().ID("proposals").Size(sz => sz.Height(424))
+    .Palette(VizPalette.SoftPastel)
+    .Type(PieChartType.Doughnut)
+        .DataSource(Model.Proposals_Pie)
+        .InnerRadius(1)
+        .ResolveLabelOverlapping(PieChartResolveLabelOverlapping.Shift)
+        .Tooltip(tl => tl
+                       .Enabled(true)
+                       .CustomizeTooltip("proposalsChartToolTipHtml")
+        ) // end of Tooltip
+        .Legend(lgnd => lgnd
+                        .HorizontalAlignment(HorizontalAlignment.Center)
+                        .VerticalAlignment(VerticalEdge.Bottom)
+                        .Visible(true)
+        ) // end of Legend
+        .Series(sr => sr
+                      .Add().ArgumentField("ProposaRank")
+                      .ValueField("NoProposals")
+                      .TagField("Tag")
+                      .Label(lbl => lbl.Visible(true)
+                                       .Connector(cn => cn.Visible(true).Width(0.5))
+                                       .Position(PieChartLabelPosition.Outside)
+                                       .CustomizeText(@<text>
+                                        function (arg) {
+                                        return arg.percentText
+                                        }
+                                    </text>)
+                      ) // end of Label
+        ) // end of Series
+        .Title(tlProposa => tlProposa
+                                    .Text("Proposals")
+                                    .Font(fntTitle => fntTitle.Weight(800).Size(13))
+
+                )// end of Title
+        .OnPointClick("proposalsChartOnPointClick")
+                )
+            </div>
+        </div>
+        <div class="col-md-5 wdght-div">
+            <div class="chart-wrap-div">
+
+
+                @(Html.DevExtreme().Chart().ID("salesRespTopAccounts")
+        .Palette(VizPalette.SoftPastel)
+        .DataSource(Model.TopAccounts_StackedBar).Size(sz => sz.Height(390))
+        .PointSelectionMode(ChartElementSelectionMode.Multiple)
+        .CommonSeriesSettings(cm => cm
+                                    .ArgumentField("AccountName")
+                                    .Type(SeriesType.StackedBar)
+                                    .SelectionMode(ChartSeriesSelectionMode.OnlyPoint)
+                                    .HoverMode(ChartSeriesHoverMode.OnlyPoint)
+                                    .TagField("Tag")
+        ) // end of CommonSeriesSettings
+        .ValueAxis(va => va
+                         .Add()
+                         .Title(tl => tl.Text("Total Sales Opportunity").Font(fnt => fnt.Size(12)))
+                         .Label(lbl => lbl
+                                        .CustomizeText(@<text>
+                            function (arg) {
+                            return '$' + ((arg.value / 1000).toLocaleString('en-US')) + 'K';
+                            }
+                                        </text>)
+                         ) // end of Label
+        ) // end of ValueAxis
+        .Series(sr =>
+        {
+            sr.Add().ValueField("Star_1").Name("1 Star").Type(SeriesType.StackedBar);
+            sr.Add().ValueField("Stars_2").Name("2 Stars").Type(SeriesType.StackedBar);
+            sr.Add().ValueField("Stars_3").Name("3 Stars").Type(SeriesType.StackedBar);
+            sr.Add().ValueField("Stars_4").Name("4 Stars").Type(SeriesType.StackedBar);
+            sr.Add().ValueField("Stars_5").Name("5 Stars").Type(SeriesType.StackedBar);
+        }
+
+        ) // end of Series
+        .Tooltip(tlp => tlp.Enabled(true).CustomizeTooltip("salesRespTopAccountsToolTipHtml"))
+        .Legend(lgnd => lgnd
+                        .Visible(true)
+                        .HorizontalAlignment(HorizontalAlignment.Center)
+                        .VerticalAlignment(VerticalEdge.Bottom)
+                        .Orientation(Orientation.Horizontal)
+                        .Position(RelativePosition.Outside)
+        ) // end of Legend
+        .Rotated(true)
+
+
+        .Title(tle => tle.Text("Top Accounts").Font(fnt => fnt.Weight(800).Size(13)))
+        .OnArgumentAxisClick("salesRespTopAccountsOnArgumentAxisClick")
+        .OnPointClick("salesRespTopAccountsOnPointClick")
+                )
+            </div>
+            <div class="next-prev-btn-section">
+                <center>
+                    <button id="btnTopAccPrev" onclick="btnPrevNextTopAccount('Prev')" class="btn btn-default btn-next-prev" title="Previous">Previous <span class="spnDefaultPageSize"></span></button>
+                    <span id="spnCurrentRecords" class="lbl-next-prev"><span id="spnCurrentPage"></span> of <span id="spnTotalPage"></span> </span>
+                    <button id="btnTopAccNext" onclick="btnPrevNextTopAccount('Next')" class="btn btn-default btn-next-prev" title="Next">Next <span class="spnDefaultPageSize"></span></button>
+                </center>
+            </div>
+        </div>
+        <div class="col-md-4 wdght-div">
+            
+                <div class="chart-wrap-div">
+                    @(Html.DevExtreme().Chart().ID("salesRespTopLegProd")
+        .Palette(VizPalette.SoftPastel)
+        .DataSource(Model.TopLegacyLegacyPlateform_StackedBar).Size(sz => sz.Height(424))
+        .PointSelectionMode(ChartElementSelectionMode.Multiple)
+        .CommonSeriesSettings(cm => cm
+                                    .ArgumentField("LegacyPlatformName")
+                                    .Type(SeriesType.StackedBar)
+                                    .ValueField("LegacyQty")
+                                    .SelectionMode(ChartSeriesSelectionMode.OnlyPoint)
+                                    .HoverMode(ChartSeriesHoverMode.OnlyPoint)
+                                    .TagField("Tag")
+        ) // end of CommonSeriesSettings
+        .ValueAxis(va => va
+                         .Add()
+                         .ValueType(ChartDataType.Numeric)
+                         .Title(tl => tl.Text("Quantity").Font(fnt => fnt.Size(12)))
+                         .Label(lbl => lbl
+                                        .CustomizeText(@<text>
+                            function (arg) {
+                            return (arg.value).toLocaleString('en-US');
+                            }
+                                        </text>)
+                         ) // end of Label
+        ) // end of ValueAxis
+        .SeriesTemplate(srtmplt => srtmplt.NameField("LegacyAge"))
+        .Rotated(true)
+        .Tooltip(tlp => tlp.Enabled(true).CustomizeTooltip("topproductsToolTipHtml"))
+        .Legend(lgnd => lgnd
+                        .Visible(true)
+                        .HorizontalAlignment(HorizontalAlignment.Center)
+                        .VerticalAlignment(VerticalEdge.Bottom)
+                        .Orientation(Orientation.Horizontal)
+                        .Position(RelativePosition.Outside)
+                        .RowCount(1)
+                        .ColumnItemSpacing(5)
+        ) // end of Legend
+        .Title(tle => tle.Text("Top Legacy Products").Font(fnt => fnt.Weight(800).Size(13)))
+        .OnArgumentAxisClick("topproductsOnArgumentAxisClick")
+        .OnPointClick("topproductsOnPointClick")
+                    )
+                </div>
+            
+        </div>
+        <div id="hdnModelSiteData" class="hidden-div"> @Html.Raw(modelSiteData)</div>
+    </div>
+</div>
+<div id="charttest"></div>
+
+
+
+@(Html.DevExtreme().Popup().ID("nodataPopup")
+        .Visible(false)
+        .Width(250)
+        .Height(100)
+        .ShowTitle(false)
+        .ContentTemplate(@<text>
+            <div class="no-data-popup">
+                <h4> No Data. </h4>
+                <input type="button" class="btn-default btn" value="OK" onclick="hidePopup()" />
+            </div>
+        </text>)
+)
+@(Html.DevExtreme().LoadPanel()
+    .ID("dataLoadPanel")
+    .CloseOnOutsideClick(false)
+    .Visible(false)
+    .Message("Data Loading")
+)
+<div id="context-menu"></div>
+
+
+@Html.HiddenFor(x => x.CurrentUser)
+@Html.HiddenFor(x => x.UserInfoHeader)
+@Html.HiddenFor(x => x.Top_Account_TotalCount)
+@Html.HiddenFor(x => x.STsaleRepName)
+@Html.HiddenFor(x => x.ApiURLlink)
+<input id="hdnEncryptionTestUrl" type="hidden" value="@Url.Action("EncryptionTest","Dashboard")" />
+<input id="hdnTopAccountUrl" type="hidden" value="@Url.Action("LoadTopAccountDataForSales","Dashboard")" />
+<input id="hdnLoadSalesTeamAllDataUrl" type="hidden" value="@Url.Action("LoadAllDataForSalesTeam","Dashboard")" />
+<input id="hdnSalesTeamDashboard" type="hidden" value="@Url.Action("SalesTeam","Dashboard")" />
+<input id="hdnAccountsDashboard" type="hidden" value="@Url.Action("Accounts","Dashboard")" />
+<div class="row">
+    <div class="col-md-12 top-pad-title">
+        <table style="width:100%;">
+            <tr>
+                <td>
+                    <label id="lblDateRefreshed">@Model.DateRefreshed</label>
+                </td>
+                <td style="width:50%; text-align:right;">
+                    <label id="lblVersion">@Model.Version</label>
+                </td>
+            </tr>
+        </table>
+    </div>
+</div>
+<br />
+
+
+<script src="~/Scripts/Dashboard/SalesTeam.js"></script>
+

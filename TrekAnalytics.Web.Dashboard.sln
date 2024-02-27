@@ -1,0 +1,64 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27703.2047
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AnalyticsAPI", "AnalyticsAPI\AnalyticsAPI.csproj", "{43B05588-B8E7-4D7B-9BE6-A92614FEEACB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SalesAnalytics.Web.Dashboard", "SalesAnalyticsMVC\SalesAnalytics.Web.Dashboard.csproj", "{224869B2-1F63-4720-9242-68FFD8EBC95C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SCE.Web", "SCE.Web\SCE.Web.csproj", "{70362AE6-D774-4801-93E4-31596D41AF09}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{43B05588-B8E7-4D7B-9BE6-A92614FEEACB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{43B05588-B8E7-4D7B-9BE6-A92614FEEACB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{43B05588-B8E7-4D7B-9BE6-A92614FEEACB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{43B05588-B8E7-4D7B-9BE6-A92614FEEACB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{224869B2-1F63-4720-9242-68FFD8EBC95C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{224869B2-1F63-4720-9242-68FFD8EBC95C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{224869B2-1F63-4720-9242-68FFD8EBC95C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{224869B2-1F63-4720-9242-68FFD8EBC95C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{70362AE6-D774-4801-93E4-31596D41AF09}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{70362AE6-D774-4801-93E4-31596D41AF09}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{70362AE6-D774-4801-93E4-31596D41AF09}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{70362AE6-D774-4801-93E4-31596D41AF09}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {87F4B964-D16B-4DAC-959B-DB8635B62E79}
+	EndGlobalSection
+	GlobalSection(TeamFoundationVersionControl) = preSolution
+		SccNumberOfProjects = 4
+		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccTeamFoundationServer = https://ramasatya.visualstudio.com/
+		SccLocalPath0 = .
+		SccProjectUniqueName1 = AnalyticsAPI\\AnalyticsAPI.csproj
+		SccProjectName1 = AnalyticsAPI
+		SccLocalPath1 = AnalyticsAPI
+		SccProjectUniqueName2 = SalesAnalyticsMVC\\SalesAnalytics.Web.Dashboard.csproj
+		SccProjectName2 = SalesAnalyticsMVC
+		SccLocalPath2 = SalesAnalyticsMVC
+		SccProjectUniqueName3 = SCE.Web\\SCE.Web.csproj
+		SccProjectName3 = SCE.Web
+		SccLocalPath3 = SCE.Web
+	EndGlobalSection
+	GlobalSection(TeamFoundationVersionControl) = preSolution
+		SccNumberOfProjects = 5
+		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
+		SccTeamFoundationServer = https://ramasatya.visualstudio.com/
+		SccLocalPath0 = .
+		SccProjectUniqueName1 = AnalyticsAPI\\AnalyticsAPI.csproj
+		SccProjectName1 = AnalyticsAPI
+		SccLocalPath1 = AnalyticsAPI
+		SccProjectUniqueName2 = SalesAnalyticsMVC\\SalesAnalytics.Web.Dashboard.csproj
+		SccProjectName2 = SalesAnalyticsMVC
+		SccLocalPath2 = SalesAnalyticsMVC
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,576 @@
+﻿@using AnalyticsAPI.Models;
+@using Newtonsoft.Json;
+@using SalesAnalytics.Web.Dashboard.Models;
+@model SalesAnalytics.Web.Dashboard.Models.AllAccountDashDataViewModel
+@{
+    ViewBag.Title = "Accounts";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+@{
+    var modelSiteData = JsonConvert.SerializeObject(Model.Site_Card);
+    var listBUDataCnt = JsonConvert.SerializeObject(Model.ListBU);
+    listBUDataCnt = listBUDataCnt.Replace("'", "");
+    string displayCurrentUser = Model.CurrentUser != null ? Model.CurrentUser.Replace(">", "<") : string.Empty;
+    string find = ".";
+    int lastIndex = displayCurrentUser.LastIndexOf(find);
+
+    if (lastIndex != -1)
+    {
+        string beginString = displayCurrentUser.Substring(0, lastIndex);
+        string endString = displayCurrentUser.Substring(lastIndex + find.Length);
+
+        displayCurrentUser = beginString + " " + endString;
+    }
+
+}
+
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="col-md-6">
+            @if (!string.IsNullOrEmpty(Model.CurrentUser)
+                && (Model.CurrentUser.Contains("<") || Model.CurrentUser.Contains(">"))
+                 || (Model.IsAccountSearch == "1"))
+            {
+                <a class="dx-icon dx-icon-arrowleft nav-back-arrow" onclick="history.back();"></a>
+            }
+            <p class="CurrentUser">@displayCurrentUser</p>
+        </div>
+        <div class="col-md-6">
+            <div class="account-search-section">
+                <a id="accountSearch" class="acc-search-link" onclick="ShowAccountSearch()">Account Search</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="row">
+    <div class="col-md-12 filter-btn-div">
+        <center>
+
+
+            <div class="dx-field" style="min-width:1000px;">
+                <table>
+                    <tr class="btn-tr">
+                        <td>
+                            @(Html.DevExtreme().Button().ID("btnHRP").Text("High Ranking Proposals").OnClick("btnFiltersClick").AccessKey("ProposalIsHighRank"))
+                        </td>
+                        <td>
+                            @(Html.DevExtreme().Button().ID("btnCE").Text("Contracts Expiring in 7-12 Months").OnClick("btnFiltersClick").AccessKey("LegacyContractEndDate"))
+                        </td>
+                        <td>
+                            @(Html.DevExtreme().Button().ID("btnEOSL").Text("EOSL within 18 Months").OnClick("btnFiltersClick").AccessKey("LegacyEOSLDate"))
+                        </td>
+                        <td>
+                            @(Html.DevExtreme().Button().ID("btnLegacy").Text("Legacy Systems 3-6 Years Old").OnClick("btnFiltersClick").AccessKey("LegacyAge"))
+                        </td>
+                        <td>
+                            <div id="treeBox_prnt">
+                                <div id="treeBox"></div>
+                            </div>
+                        </td>
+
+                        <td>
+                            <div id="selectAccounts" class="select-account-search"></div>
+                        </td>
+                        <td>
+                            @(Html.DevExtreme().Button().ID("btnRefresh").Icon("refresh").OnClick("btnFiltersClick").AccessKey("Close"))
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </center>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-12">
+        <div class="const-tbl summary-chart-cls">
+            <div>
+                <table class="full-width-tbl">
+                    <tr>
+                        <td>
+                            <label class="value1" id="cntTotalSalesOpps"></label>
+                        </td>
+                        <td>
+                            <label class="value1" id="cntTotalHighRankingSalesOpps"></label>
+                        </td>
+                        <td>
+                            <label class="value1" id="cntNoProposals"></label>
+                        </td>
+                        <td>
+                            <label class="value1" id="cntTotalHighRanking"></label>
+                        </td>
+                        <td>
+                            <label class="value1" id="cntNoAccounts"></label>
+                        </td>
+                        <td>
+                            <label class="value1" id="cntNoSite"></label>
+                        </td>
+                        <td>
+                            <label class="value1" id="cntTotalLegacyQty"></label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <label class="text">Total Sales Opportunity</label>
+                        </td>
+                        <td>
+                            <label class="text">Total High Ranking Sales Opportunity</label>
+                        </td>
+                        <td>
+                            <label class="text">Total Proposals</label>
+                        </td>
+                        <td>
+                            <label class="text">High Ranking Proposals</label>
+                        </td>
+                        <td>
+                            <label class="text">Total Accounts</label>
+                        </td>
+                        <td>
+                            <label class="text">Total Sites</label>
+                        </td>
+                        <td>
+                            <label class="text">Total Legacy Products</label>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row no-margin top-pad-title">
+    <div class="col-md-12 no-margin">
+
+
+        <div class="col-md-3 wdght-div">
+            <div class="chart-wrap-div">
+
+                @(Html.DevExtreme().PieChart().ID("accounts")
+                .Palette(VizPalette.SoftPastel).Size(sz => sz.Height(384))
+            .Type(PieChartType.Doughnut)
+            .InnerRadius(1)
+                .DataSource(Model.Account_Pie)
+                .Legend(lgd => lgd.HorizontalAlignment(HorizontalAlignment.Center).VerticalAlignment(VerticalEdge.Bottom).Visible(true))
+                .Tooltip(tl => tl.Enabled(true).CustomizeTooltip("accountsToolTipHtml"))
+            .Series(s => s
+            .Add()
+            .ArgumentField("Status")
+            .ValueField("NoProposals")
+            .TagField("Details")
+            .Label(lbl => lbl.Visible(true).Connector(cn => cn.Visible(true)).Position(PieChartLabelPosition.Outside)
+            .CustomizeText(@<text>
+                function (arg) {
+                return arg.percentText;
+                }
+            </text>).Font(x => x.Size(11)))
+
+
+        )
+        .Title(mttl => mttl.Text("Pipeline")
+                            .Font(fnt => fnt.Weight(800)
+                                            .Size(13))
+                        )//end title
+            .OnPointClick("accountsOnPointClick")
+
+                )
+            </div>
+        </div>
+        <div class="col-md-5 wdght-div">
+            <div class="chart-wrap-div">
+
+
+                @(Html.DevExtreme().Chart().ID("topaccounts")
+                .Palette(VizPalette.SoftPastel).Size(x => x.Height(350))
+                .DataSource(Model.TopAccounts_StackedBar)
+
+                .CommonSeriesSettings(cs =>
+                                      cs.ArgumentField("AccountName")
+                                        .ValueField("SalesOpp")
+                                        .SelectionMode(ChartSeriesSelectionMode.OnlyPoint)
+                                        .HoverMode(ChartSeriesHoverMode.OnlyPoint)
+                                        .TagField("Details")
+                                        .Type(SeriesType.StackedBar)
+                                    )
+                .ValueAxis(vx =>
+                            vx.Add().Title(t => t.Text("Total Sales Opportunity").Font(f => f.Size(12)))
+                                            .Label(lbl => lbl.Format("thousands")
+                                                             .CustomizeText(@<text>
+                                                                function (arg) {
+                                                                return '$' + ((arg.value / 1000).toLocaleString('en-US')) + 'K';
+                                                                }
+                                                            </text>))
+                                                            .ValueType(ChartDataType.Numeric)
+           )
+           .SeriesTemplate(sr => sr.NameField("LegacyBU"))
+           .Tooltip(tl => tl.Enabled(true)
+                            .CustomizeTooltip("topaccountsToolTipHtml"))//end tooltip
+         .Legend(lgnd => lgnd.Visible(true)
+                             .HorizontalAlignment(HorizontalAlignment.Center)
+                             .VerticalAlignment(VerticalEdge.Bottom)
+                             .Orientation(Orientation.Horizontal)
+                             .Position(RelativePosition.Outside))//end legend
+        .Rotated(true)
+       .Title(mttl => mttl.Text("Top Accounts")
+                          .Font(fnt => fnt.Weight(800)
+                                          .Size(13))
+                      )//end title
+       .OnArgumentAxisClick("topAccountsArgClicked")
+       .OnPointClick("topAccountsOnPointClick")
+
+
+                )
+            </div>
+            <div class="next-prev-btn-section">
+                <center>
+                    <button id="btnTopAccPrev" onclick="btnPrevNextTopAccount('Prev')" class="btn btn-default btn-next-prev" title="Previous">Previous <span class="spnDefaultPageSize"></span></button>
+                    <span id="spnCurrentRecords" class="lbl-next-prev"><span id="spnCurrentPage"></span> of <span id="spnTotalPage"></span> </span>
+                    <button id="btnTopAccNext" onclick="btnPrevNextTopAccount('Next')" class="btn btn-default btn-next-prev" title="Next">Next <span class="spnDefaultPageSize"></span></button>
+                </center>
+            </div>
+
+        </div>
+        <div class="col-md-4 wdght-div">
+            <div class="chart-wrap-div">
+
+
+                @(Html.DevExtreme().Chart().ID("expiringContractsChart")
+                .Palette(VizPalette.SoftPastel)
+                            .DataSource(Model.ExpiringContracts_MixedChart).Size(sz => sz.Height(384))
+                            .CommonSeriesSettings(cs => cs
+                                                        .ArgumentField("ExpiryDate")
+                                                        .Type(SeriesType.Bar)) // end CommonSeriesSettings
+                            .ArgumentAxis(a => a
+                                            .Label(lbl => lbl
+                                                        .Format("MMM yy")
+                                                        .DisplayMode(ChartLabelDisplayMode.Rotate)
+                                                        .RotationAngle(-80)) // end of Label
+                            )// end ArgumentAxis
+                            .Series(s =>
+                            {
+                                s.Add().ValueField("TotalSalesOpp").Name("Total Sales Opportunity").TagField("NoProposals");
+                                s.Add().Type(SeriesType.Spline).Axis("Counts").ValueField("NoProposals").Name("Proposals");
+                            }
+                        )// end of Series
+                        .ValueAxis(va =>
+                        {
+                            va.Add().Name("Sales").Grid(g => g.Visible(true))
+                                                  .ValueType(ChartDataType.Numeric)
+                                                  .Title(tl => tl
+                                                                .Text("Total Sales Opportunity")
+                                                                .Font(fnt => fnt.Size(12)))
+                                                   .Label(lbl => lbl
+                                                                    .Format("thousands")
+                                                                    .CustomizeText(@<text>
+                                                                        function (arg) {
+                                                                        return '$' + ((arg.value / 1000).toLocaleString('en-US')) + 'K';
+                                                                        }
+                                                                    </text>))
+                                                .ValueMarginsEnabled(true);
+                        va.Add().Name("Counts").Position(Position.Right)
+                                           .Label(lbl2 => lbl2.Format("fixedPoint"))
+                                           .ValueType(ChartDataType.Numeric)
+                                           .Title(tl2 => tl2
+                                                         .Text("Total Proposals")
+                                                         .Font(fnt2 => fnt2.Size(12)));
+                    }
+                    )// end of ValueAxis
+                    .Legend(lgnd => lgnd
+                                    .Visible(true)
+                                    .HorizontalAlignment(HorizontalAlignment.Center)
+                                    .VerticalAlignment(VerticalEdge.Bottom)
+                                    .Orientation(Orientation.Horizontal)
+                                    .Position(RelativePosition.Outside)
+                    ) //end of Legend
+                    .Tooltip(tl => tl
+                                    .Enabled(true)
+                                    .CustomizeTooltip("expiringContractsChartToolTipHtml")
+                    ) // end of Tooltip
+                    .Title(tlExpiring => tlExpiring
+                                        .Text("Expiring Contracts")
+                                        .Font(fntTitle => fntTitle.Weight(800).Size(13))
+            )// end of Title
+            .OnPointClick("expiringContractsChartOnPointClick")
+
+                )
+
+            </div>
+        </div>
+    </div>
+</div>
+<div class="row no-margin">
+    <div class="col-md-12 no-margin">
+        <div class="col-md-3 wdght-div">
+            <div class="chart-wrap-div">
+
+
+                @(Html.DevExtreme().PieChart().ID("proposals").Size(sz => sz.Height(421))
+                    .Palette(VizPalette.SoftPastel)
+                    .Type(PieChartType.Doughnut)
+                        .DataSource(Model.Proposals_Pie)
+                        .InnerRadius(1)
+                        .ResolveLabelOverlapping(PieChartResolveLabelOverlapping.Shift)
+                        .Tooltip(tl => tl
+                                       .Enabled(true)
+                                       .CustomizeTooltip("proposalsToolTipHtml")
+                        ) // end of Tooltip
+                        .Legend(lgnd => lgnd
+                                        .HorizontalAlignment(HorizontalAlignment.Center)
+                                        .VerticalAlignment(VerticalEdge.Bottom)
+                                        .Visible(true)
+                        ) // end of Legend
+                        .Series(sr => sr
+                                      .Add().ArgumentField("ProposaRank")
+                                      .ValueField("NoProposals")
+                                      .TagField("Tag")
+                                      .Label(lbl => lbl.Visible(true)
+                                                       .Connector(cn => cn.Visible(true).Width(0.5))
+                                                       .Position(PieChartLabelPosition.Outside)
+                                                       .CustomizeText(@<text>
+                                                        function (arg) {
+                                                        return arg.percentText
+                                                        }
+                                                    </text>)
+                        ) // end of Label
+          ) // end of Series
+          .Title(tlProposa => tlProposa
+                                      .Text("Proposals")
+                                      .Font(fntTitle => fntTitle.Weight(800).Size(13))
+
+                  )// end of Title
+          .OnPointClick("proposalsOnPointClick")
+                )
+            </div>
+        </div>
+        <div id="hdnlistBUDataCnt" class="hidden-div"> @Html.Raw(listBUDataCnt) </div>
+        <div id="hdnModelSiteData" class="hidden-div"> @Html.Raw(modelSiteData)</div>
+        <input id="hdnEncryptionTestUrl" type="hidden" value="@Url.Action("EncryptionTest","Dashboard")" />
+        <input id="hdnSingleAccountUrl" type="hidden" value="@Url.Action("SingleAccount","Dashboard")" />
+        <input id="hdnTopAccountUrl" type="hidden" value="@Url.Action("LoadTopAccountData","Dashboard")" />
+        <input id="hdnLoadAllAccountDataUrl" type="hidden" value="@Url.Action("LoadAllAccountData","Dashboard")" />
+        <input id="hdnSearchAccountUrl" type="hidden" value="@Url.Action("SearchAccountByKeyWord","Dashboard")" />
+        <input id="hdnAppltAccountSearchUrl" type="hidden" value="@Url.Action("FilterDataBasedOnSelectedAccount","Dashboard")" />
+        <input id="hdnUpdateAccountSearchData" type="hidden" value="@Url.Action("UpdateAccountSearchData","Dashboard")" />
+        <input id="hdnGetAccountSearchList" type="hidden" value="@Url.Action("GetAccountSearchList","Dashboard")" />
+        <input id="hdnBindAccountSearchListOnResetClick" type="hidden" value="@Url.Action("BindAccountSearchListOnResetClick","Dashboard")" />
+        <div class="col-md-5 wdght-div no-padding">
+            <center>
+                <div class="grid-title">
+                    Top Proposals
+                </div>
+            </center>
+
+            @(Html.DevExtreme().DataGrid<TopProposals>().ID("topproposals")
+                    .Width("100%")
+                    .Height(397)/*226*/
+                    .ShowBorders(true)
+                    .ShowRowLines(true)
+                    .DataSource(Model.TopProposals_Grid)
+                    .ColumnAutoWidth(true).AllowColumnResizing(true).ColumnResizingMode(ColumnResizingMode.Widget)
+                    .Selection(s => s.Mode(SelectionMode.Single))
+                    .Paging(x => x.Enabled(true).PageSize(10))
+                    .Columns(c =>
+                    {
+                        c.AddFor(m => m.ProposalID).Width(80).CssClass("chart-grd-hdr").Alignment(HorizontalAlignment.Left);
+                        c.AddFor(m => m.Rank).Width(55).SortOrder(SortOrder.Desc).CssClass("chart-grd-hdr").Alignment(HorizontalAlignment.Left);
+                        c.AddFor(m => m.SalesOpportunity).Width(100).CssClass("chart-grd-hdr grd-cell-right").Alignment(HorizontalAlignment.Left).SortOrder(SortOrder.Desc).Format("currency").DataType(GridColumnDataType.Number);
+                        c.AddFor(m => m.LegacyProduct).Width(135).CssClass("chart-grd-hdr").Alignment(HorizontalAlignment.Left);
+                        c.AddFor(m => m.LegacyQty).Width(65).CssClass("chart-grd-hdr grd-cell-right").Alignment(HorizontalAlignment.Left);
+                        c.AddFor(m => m.ProposedProduct).Width(150).CssClass("chart-grd-hdr").Alignment(HorizontalAlignment.Left);
+                        c.AddFor(m => m.ProposedQty).Width(25).CssClass("chart-grd-hdr grd-cell-right").Alignment(HorizontalAlignment.Left);
+                    })
+                    .OnRowClick("topproposalsGridRowClick")
+
+            )
+
+
+        </div>
+        <div class="col-md-4 wdght-div">
+            <div class="chart-wrap-div">
+
+
+                @(Html.DevExtreme().Chart().ID("topproducts")
+                        .Palette(VizPalette.SoftPastel)
+                        .DataSource(Model.TopLegacyProduct).Size(sz => sz.Height(421))
+                        .PointSelectionMode(ChartElementSelectionMode.Multiple)
+                        .CommonSeriesSettings(cm => cm
+                                                    .ArgumentField("LegacyName")
+                                                    .Type(SeriesType.StackedBar)
+                                                    .ValueField("LegacyQty")
+                                                    .SelectionMode(ChartSeriesSelectionMode.OnlyPoint)
+                                                    .HoverMode(ChartSeriesHoverMode.OnlyPoint)
+                                                    .TagField("Tag")
+                        ) // end of CommonSeriesSettings
+                        .ValueAxis(va => va
+                                         .Add().Grid(gr => gr.Visible(true))
+                                         .ValueType(ChartDataType.Numeric)
+                                         .Title(tl => tl.Text("Quantity").Font(fnt => fnt.Size(12)))
+                                         .Label(lbl => lbl
+                                                        .CustomizeText(@<text>
+                                                            function (arg) {
+                                                            return (arg.value).toLocaleString('en-US');
+                                                            }
+                                                        </text>)
+                                 ) // end of Label
+                ) // end of ValueAxis
+                .SeriesTemplate(srtmplt => srtmplt.NameField("LegacyAge"))
+                .Rotated(true)
+                .Tooltip(tlp => tlp.Enabled(true).CustomizeTooltip("topproductsToolTipHtml"))
+                .Legend(lgnd => lgnd
+                                .Visible(true)
+                                .HorizontalAlignment(HorizontalAlignment.Center)
+                                .VerticalAlignment(VerticalEdge.Bottom)
+                                .Orientation(Orientation.Horizontal)
+                                .Position(RelativePosition.Outside)
+                                .RowCount(1)
+                                .ColumnItemSpacing(5)
+                ) // end of Legend
+                .Title(tle => tle.Text("Top Legacy Products").Font(fnt => fnt.Weight(800).Size(13)))
+                .OnArgumentAxisClick("topproductsOnArgumentAxisClick")
+                .OnPointClick("topproductsOnPointClick")
+                )
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+@(Html.DevExtreme().Popup().ID("nodataPopup")
+            .Visible(false)
+            .Width(250)
+            .Height(100)
+            .ShowTitle(false)
+            .ContentTemplate(@<text>
+                <div class="no-data-popup">
+                    <h4> No Data. </h4>
+                    <input type="button" class="btn-default btn" value="OK" onclick="hidePopup()" />
+                </div>
+            </text>)
+)
+
+@(Html.DevExtreme().LoadPanel()
+        .ID("dataLoadPanel")
+        .CloseOnOutsideClick(false)
+        .Visible(false)
+        .Message("Data Loading")
+)
+<div id="context-menu"></div>
+<div id="topProposalsMenu"></div>
+
+@(Html.DevExtreme().Popup().ID("accountSearchPopup")
+        .Visible(false)
+        .ShowTitle(true)
+        .ContentTemplate(@<text>
+            @InnerConent()
+        </text>)
+            .DeferRendering(false)
+            .Height(650)
+            .Position(x => x.At(HorizontalAlignment.Center, VerticalAlignment.Top).My(HorizontalAlignment.Center, VerticalAlignment.Top))
+            .Title("Search Accounts by Name or Customer ID")
+
+)
+
+@helper InnerConent()
+{
+    <div class="col-md-12 no-margin" style="padding-bottom:10px;">
+        <div class="col-md-3 no-margin account-search-title">
+            Enter partial/full name or customer ID
+            <i class="fa fa-info-circle" title="Enter a search term; it can be a partial/full name or partial/full ID."></i>
+        </div>
+        <div class="col-md-4 no-margin acc-search-txt">
+            <input type="text" class="form-control" id="txtAccountSearch" />
+        </div>
+        <div class="col-md-2 no-margin">
+            <input type="button" class="btn btn-default" value="Go" onclick="SearchAccountByKeyword(false)" />
+        </div>
+    </div>
+    <div class="row" id="searchResultText" style="padding:5px;padding-left:17px;">
+        <div class="acc-search-result">
+            <span class="acc-search-result-title">Search Result</span><br />
+            <div class="search-result-description">
+                @{
+                    int accCount = 0;
+                    accCount = Model.AccountListData != null ? Model.AccountListData.Count() : 0;
+                }
+                <span id="searchCount">@accCount</span> account(s) found. Selected accounts are from the current dashboard. Perform search or filter using the row below the header row.
+            </div>
+        </div>
+
+    </div>
+    
+    @*<div class="row" id="searchResultTextForNoData" style="display:none;padding:5px;padding-left:17px;">
+            <div class="acc-search-result">
+                <span class="acc-search-result-title">Search Result</span><br />
+                <div class="search-result-description">
+                    No account found. Perform another search above.
+                </div>
+            </div>
+        </div>*@
+    <div id="search-acc-grid" class="row ">
+        <div class="col-md-12">
+            @(Html.DevExtreme().DataGrid<AccountViewModel>().ID("accountsearchgrid")
+                .DataSource(Model.AccountListData)
+                .ColumnAutoWidth(true)
+                .Height(400).AccessKey("AccountID")
+                .ShowBorders(true)
+                .Export(e => e.Enabled(false).FileName("AccountsList").AllowExportSelectedData(true))
+                .Scrolling(scrolling => scrolling.ShowScrollbar(ShowScrollbarMode.OnHover))
+                .OnSelectionChanged("OnSelectionChangedAccSearch")
+                .Paging(x => x.Enabled(true).PageSize(10))
+                .FilterRow(filterRow => filterRow
+                    .Visible(true)
+                    .ApplyFilter(GridApplyFilterMode.Auto)
+                )// end of FilterRow
+                .HeaderFilter(headerFilter => headerFilter.Visible(true))
+
+                .Selection(sc => sc.AllowSelectAll(true).Mode(SelectionMode.Multiple).ShowCheckBoxesMode(GridSelectionShowCheckBoxesMode.Always))
+                .Columns(c =>
+                {
+                    c.AddFor(m => m.AccountID).DataType(GridColumnDataType.Number).Caption("Customer ID").HeaderFilter(filter => filter.GroupInterval(5000));
+                    c.AddFor(m => m.AccountName).Caption("Customer Name");
+                    c.AddFor(m => m.Country);
+                    c.AddFor(m => m.TotalProposalSalesOpportunity).Format("currency").DataType(GridColumnDataType.Number).Caption("Total Sales Opportunity").HeaderFilter(filter => filter.GroupInterval(5000));
+                    c.AddFor(m => m.TotalTopProposals).Caption("Total Proposals").DataType(GridColumnDataType.Number).HeaderFilter(filter => filter.GroupInterval(5));
+                    c.AddFor(m => m.TotalTopLegacyProducts).Caption("Total LegacyProducts").DataType(GridColumnDataType.Number).HeaderFilter(filter => filter.GroupInterval(50));
+                    c.AddFor(m => m.IsSelected).Visible(false);
+                })
+            )
+        </div>
+    </div>
+    <div class="row action-btns" style="padding:10px;">
+        <input id="btnAccountSearchViewSelecte" type="button" class="btn btn-default" value="View Selected" onclick="accountSearchApply()" />
+        <input id="btnExport" type="button" class="btn btn-default" value="Download Selected" onclick="btnExportClick()" />
+        <input id="btnReset" type="button" class="btn btn-default" value="Reset" onclick="btnResetClick()" />
+        <input id="btnSortSelected" type="button" class="btn btn-default" value="Sort Selected/Unselected" onclick="btnSortSelectedClick()" />
+        <input id="btnAccountSearchClose" type="button" class="btn btn-default" value="Cancel" onclick="accountSearchCancelClick()" />
+
+    </div>
+}
+
+@Html.HiddenFor(x => x.CurrentUser)
+@Html.HiddenFor(x => x.UserGUID)
+@Html.HiddenFor(x => x.UserInfoHeader)
+@Html.HiddenFor(x => x.Top_Account_TotalCount)
+@Html.HiddenFor(x => x.IsAccountSearch)
+@Html.HiddenFor(x => x.DBUserId)
+@Html.HiddenFor(x => x.UserLevel)
+@Html.HiddenFor(x => x.ApiURLlink)
+@Html.HiddenFor(x => x.AccountSearchSelectedIds)
+<div class="row">
+    <div class="col-md-12 top-pad-title">
+        <table style="width:100%;">
+            <tr>
+                <td>
+                    <label id="lblDateRefreshed">@Model.DateRefreshed</label>
+                </td>
+                <td style="width:50%; text-align:right;">
+                    <label id="lblVersion">@Model.Version</label>
+                </td>
+            </tr>
+        </table>
+    </div>
+</div>
+<br />
+
+<script src="~/Scripts/Dashboard/Accounts.js"></script>

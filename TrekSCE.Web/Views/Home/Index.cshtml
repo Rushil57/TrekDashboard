@@ -1,0 +1,922 @@
+﻿@using DevExtreme.AspNet.Mvc;
+@using SCE.Web.DataUtil.Dto;
+@using SCE.Web.Models;
+@model SCE.Web.Models.SCEViewModel
+@{
+    /**/
+
+    ViewBag.Title = "Home Page";
+}
+
+<div class="h1" style="margin-bottom:5%">Sales Cycle Estimate</div>
+<div class="pannel">
+    @(Html.DevExtreme().Accordion()
+                                                                                                    .ID("SaleLapseDaysAccordion")
+
+                                                                                                    .DataSource(new[] { new { title = "Define Sales Lapse Days" } })
+                                                                                                    .Collapsible(true)
+                                                                                                    .DeferRendering(true)
+                                                                                                    .Multiple(true)
+                                                                                                    .AnimationDuration(300)
+                                                                                                    .ItemTemplate(@<text>
+                                                                                                        @SalesLapseDaysPnl()
+                                                                                                    </text>)
+    )
+
+
+</div>
+
+@helper SalesLapseDaysPnl()
+{
+    /**/
+    <div class="content-title">Please enter estimate number of sales calls and gap days between 2 calls</div>
+    <div class="h5">All fields are required</div>
+    <div class="datagrid">
+        @(Html.DevExtreme().DataGrid<SaleSlapseDaysDto>()
+                                                                                .ID("SalesLapseDays")
+                                                                                .Width("50%")
+                                                                            .Height("100%")/*226*/
+                                                                            .ShowBorders(false)
+                                                                            .ShowRowLines(false)
+                                                                            .Sorting(s => s.Mode(GridSortingMode.None))
+                                                                            .ShowColumnLines(false)
+                                                                            .DataSource(Model.SaleSlapseDays)
+                                                                            .ColumnAutoWidth(true).AllowColumnResizing(true).ColumnResizingMode(ColumnResizingMode.Widget)
+                                                                            .Columns(c =>
+                                                                            {
+
+
+                                                                                c.Add().Caption("Deal Size Group").CellTemplate(@<text>
+                                                                                    @(Html.DevExtreme().TextBox().Value(new JS("data.DealSizeBandId")).InputAttr(new { @class = "disable-txt" }))
+                                                                                </text>);
+                                                                                        c.Add().Caption("Number Sales Calls").CellTemplate(@<text>
+                                                                                            @(Html.DevExtreme().NumberBox().Value(new JS("GetNumberSalesCalls(data)")).OnValueChanged("GetCalcByNumberSalesCalls"))
+                                                                                        </text>).CssClass("number-sales-calls-id");
+                                                                                                c.Add().Caption("Call Gap Days").CellTemplate(@<text>
+                                                                                                    @(Html.DevExtreme().NumberBox().Value(new JS("GetCallGapDays(data)")).OnValueChanged("GetCalcByCallDaysGaps"))
+                                                                                                </text>).CssClass("call-gap-days-id");
+                                                                                                        c.Add().Caption("Sales Lapse Days").CellTemplate(@<text>
+                                                                                                            @(Html.DevExtreme().TextBox().Value(new JS("GetSalesLapseDays(data)")).InputAttr(new { @class = "disable-txt sales-lp-days" }).Disabled(true))
+                                                                                                        </text>).CssClass("sales-lapse-days-id");
+                                                                                                                c.AddFor(m => m.DealSizeBandId).Caption("Deal Size Group").CssClass("deal-size-id hiddencol");
+                                                                                                                c.AddFor(m => m.Id).CssClass("deal-id");
+                                                                                                            })/*.OnContentReady("SalesLapseDays_all_row_calc")*/
+
+
+
+
+        )
+    </div>
+    <div class="footer-btn">
+        @(Html.DevExtreme().Button().ID("SaleLapseDays-save-btn").Text("Save").ElementAttr(new { @class = "from-input" }).OnClick("SaveSalesLapseDays"))
+        @(Html.DevExtreme().Button().ID("SaleLapseDays-reset-btn").Text("Reset").ElementAttr(new { @class = "from-input" }).OnClick("ResetSaleslapsedays"))
+    </div>
+}
+
+
+@*Close Book *@
+<div class="pannel">
+    @(Html.DevExtreme().Accordion()
+                                                                            .ID("CloseToBookAccordion")
+                                                                            .DataSource(new[] {
+new { title = "Define Close to Book ", }})
+                                                                            .Collapsible(true)
+                                                                            .DeferRendering(false)
+                                                                            .Multiple(true)
+                                                                            .ItemTemplate(@<text>
+                                                                                @CloseToBookPnl()
+                                                                            </text>)
+    )
+
+
+</div>
+
+@helper CloseToBookPnl()
+{
+    /**/
+    <div class="content-title">Please enter estimate days for each of the following steps from close agreement to booked order</div>
+    <div class="h5">All fields are required</div>
+    <div class="datagrid">
+        @(Html.DevExtreme().DataGrid<CloseToBookDto>().ID("CloseToBook")
+                                                                                                                        .Width("50%")
+                                                                                                                        .Height("100%")/*226*/
+                                                                                                                        .ShowBorders(false)
+                                                                                                                        .Sorting(s => s.Mode(GridSortingMode.None))
+                                                                                                                        .ShowColumnLines(false)
+                                                                                                                        .ShowRowLines(false)
+                                                                                                                        .DataSource(Model.CloseToBook)
+                                                                                                                        .ColumnAutoWidth(true).AllowColumnResizing(true)
+                                                                                                                        .ColumnResizingMode(ColumnResizingMode.Widget)
+                                                                                                                        //.Editing(editing =>
+                                                                                                                        //{
+                                                                                                                        //    editing.Mode(GridEditMode.Cell);
+                                                                                                                        //    editing.AllowUpdating(true);
+                                                                                                                        //})
+                                                                                                                        .Columns(c =>
+                                                                                                                        {
+                                                                                                                            c.AddFor(m => m.Name).Caption("").AllowEditing(false);
+                                                                                                                //c.AddFor(m => m.DefaultValue).Caption("Days");
+                                                                                                                c.Add().Caption("Days").CssClass("close-days").CellTemplate(@<text>
+                                                                                                                        @(Html.DevExtreme().NumberBox().Value(new JS("GetCloseToBookDays(data)")).OnValueChanged("CalculateCloseToBookTotal"))
+                                                                                                                </text>);
+                                                                                                                        c.AddFor(m => m.Id).CssClass("closetobookid");
+                                                                                                                    }
+
+                                            ).OnContentReady("closeToBook_grid_prepared")
+        )
+    </div>
+    <div class="footer-btn">
+        @(Html.DevExtreme().Button().ID("CloseToBook-save-btn").Text("Save").ElementAttr(new { @class = "from-input" }).OnClick("SaveCloseToBook"))
+        @(Html.DevExtreme().Button().ID("CloseToBook-reset-btn").Text("Reset").ElementAttr(new { @class = "from-input" }).OnClick("ResetCloseToBook"))
+
+    </div>
+}
+
+@*Salse cycle Extension *@
+<div class="pannel">
+    @(Html.DevExtreme().Accordion()
+                                                                                                                                                            .ID("SaleCycleExtensionAccordion")
+                                                                                                                                                            .DataSource(new[] {
+new { title = "Define Sales Cycle Extension "}
+                                                                                                                                                            })
+                                                                                                                                                            .Collapsible(true)
+                                                                                                                                                            .DeferRendering(false)
+                                                                                                                                                            .Multiple(true)
+                                                                                                                                                            .ItemTemplate(@<text>
+                                                                                                                                                                @SaleCycleExtensionPnl()
+                                                                                                                                                            </text>)
+    )
+</div>
+
+@helper SaleCycleExtensionPnl()
+{
+    /**/
+    <div class="content-title">Please enter estimate sales cycle extension in percent for each of the total stars of customer, reseller and proposal</div>
+    <div class="h5">All fields are required</div>
+    <div class="row">
+        <div class="col-md-12">
+            <div class="col-md-6">
+                <div>
+                    @(Html.DevExtreme().DataGrid<SalesCycleExtensionDto>().ID("SalesCycleExtension")
+                                                                                                                                                                                              .Width("50%")
+                                                                                                                                                                                              .Height("100%")/*226*/
+                                                                                                                                                                                              .ShowBorders(false)
+                                                                                                                                                                                              .Sorting(s => s.Mode(GridSortingMode.None))
+                                                                                                                                                                                              .ShowRowLines(false)
+                                                                                                                                                                                              .ShowColumnLines(false)
+                                                                                                                                                                                              .DataSource(Model.SalesCycleExtension)
+                                                                                                                                                                                              .ColumnAutoWidth(true).AllowColumnResizing(true).ColumnResizingMode(ColumnResizingMode.Widget)
+                                                                                                                                                                                              .Columns(c =>
+                                                                                                                                                                                              {
+
+                                                                                                                                                                                                  c.Add().Caption("Total Stars Range").CellTemplate(@<text>
+                                                                                                                                                                                                    @(Html.DevExtreme().TextBox().Value(new JS("data.Name")).InputAttr(new { @class = "disable-txt" }))
+                                                                                                                                                                                                </text>);
+                                                                                                                                                                                            c.Add().Caption("Sales Cycle Extension(%)").CellTemplate(@<text>
+                                                                                                                                                                                                @(Html.DevExtreme().NumberBox().Value(new JS("GetSalesCycleExtensionDefaultVal(data)")))
+                                                                                                                                                                                            </text>).CssClass("SCExt");
+                                                                                                                                                                                        c.AddFor(m => m.Id).CssClass("salescycleextensionidcls");
+                                                                                                                                                                                        c.AddFor(m => m.Name).Caption("Total Stars Range").CssClass("hiddencol");
+                                                                                                                                                                                    }).OnCellPrepared("onCellPreparedSalesCycleExtension")
+
+
+
+
+                    )
+                </div>
+            </div>
+            <div class="col-md-6" style="margin-left: -12%">
+                @(Html.DevExtreme().DataGrid<StarsViewModel>().ID("Stars")
+                                                                                                                            .Width("100%")
+                                                                                                                            .Height("100%")/*226*/
+                                                                                                                            .ShowBorders(false)
+                                                                                                                            .ShowRowLines(false)
+                                                                                                                            .Sorting(s => s.Mode(GridSortingMode.None))
+                                                                                                                            .ShowColumnLines(false)
+                                                                                                                            .DataSource(Model.StarsViewModel)
+                                                                                                                            .ColumnAutoWidth(true).AllowColumnResizing(true).ColumnResizingMode(ColumnResizingMode.Widget)
+                                                                                                                            .Columns(c =>
+                                                                                                                            {
+                                                                                                                            //c.AddFor(m => m.Name).Caption("Star");
+                                                                                                                            //c.AddFor(m => m.CustomerRank);
+                                                                                                                            //c.AddFor(m => m.PraposalRank);
+                                                                                                                            //c.AddFor(m => m.ResellerRank);
+                                                                                                                            //c.AddFor(m => m.TotalRank);
+                                                                                                                            //c.AddFor(m => m.TotalStarRank);
+
+                                                                                                                            c.AddFor(m => m.Name).Caption("").CssClass("start-name");
+                                                                                                                            //c.AddFor(m => m.Col1).Caption("");
+                                                                                                                            //c.AddFor(m => m.Col2).Caption("");
+                                                                                                                            //c.AddFor(m => m.Col3).Caption("Stars");
+                                                                                                                            //c.AddFor(m => m.Col4).Caption("");
+                                                                                                                            //c.AddFor(m => m.Col5).Caption("");
+                                                                                                                            c.Add().Caption("").CellTemplate(@<text>
+                                                                                                                                    @(Html.DevExtreme().TextBox().InputAttr(new { @class = "disable-txt" }).Value(new JS("GetStarsCol1Val(data)")).ReadOnly(true))
+                                                                                                                            </text>);
+                                                                                                                            c.Add().Caption("").CellTemplate(@<text>
+                                                                                                                                @(Html.DevExtreme().TextBox().InputAttr(new { @class = "disable-txt" }).Value(new JS("GetStarsCol2Val(data)")).ReadOnly(true))
+                                                                                                                            </text>);
+                                                                                                                            c.Add().Caption("Stars").CellTemplate(@<text>
+                                                                                                                                @(Html.DevExtreme().TextBox().InputAttr(new { @class = "disable-txt" }).Value(new JS("GetStarsCol3Val(data)")).ReadOnly(true))
+                                                                                                                            </text>);
+                                                                                                                            c.Add().Caption("").CellTemplate(@<text>
+                                                                                                                                @(Html.DevExtreme().TextBox().InputAttr(new { @class = "disable-txt" }).Value(new JS("GetStarsCol4Val(data)")).ReadOnly(true))
+                                                                                                                            </text>);
+                                                                                                                            c.Add().Caption("").CellTemplate(@<text>
+                                                                                                                                @(Html.DevExtreme().TextBox().InputAttr(new { @class = "disable-txt" }).Value(new JS("GetStarsCol5Val(data)")).ReadOnly(true))
+                                                                                                                            </text>);
+                                                                                                                        }).OnContentReady("stars_grid_prepared")
+
+
+
+
+                )
+            </div>
+        </div>
+
+    </div>
+    <div class="footer-btn">
+        @(Html.DevExtreme().Button().ID("SalesCycleExtension-save-btn").Text("Save").ElementAttr(new { @class = "from-input" }).OnClick("SaveSCEExt"))
+        @(Html.DevExtreme().Button().ID("SalesCycleExtension-reset-btn").Text("Reset").ElementAttr(new { @class = "from-input" }).OnClick("ResetSCEEt"))
+    </div>
+}
+
+
+@*Salse cycle Estimate *@
+<div class="pannel">
+    @(Html.DevExtreme().Accordion()
+                                                                                                                                                            .ID("SalsecycleEstimateAccordion")
+                                                                                                                                                            .DataSource(new[] {
+new { title = "Calculate Sales Cycle Estimates"}
+                                                                                                                                                            })
+                                                                                                                                                            .Collapsible(true)
+                                                                                                                                                            .DeferRendering(false)
+                                                                                                                                                            .Multiple(true)
+                                                                                                                                                            .ItemTemplate(@<text>
+                                                                                                                                                                @SalsecycleEstimatePnl()
+                                                                                                                                                            </text>)
+    )
+</div>
+
+@helper SalsecycleEstimatePnl()
+{
+    /**/
+    <div class="content-title">Click 'Calculate' to calculate the Sales Cycle Estimate if any of the above parameters are changed.</div>
+
+    <div class="datagrid">
+        @(Html.DevExtreme().DataGrid<SaleSlapseDaysDto>().ID("SalsecycleEstimate")
+                                                                                                                                                             .Width("100%")
+                                                                                                                                    .Height("100%")/*226*/
+                                                                                                                                    .ShowBorders(false)
+                                                                                                                                    .ShowRowLines(false)
+                                                                                                                                    .ShowColumnLines(false)
+                                                                                                                                    .Sorting(s => s.Mode(GridSortingMode.None))
+                                                                                                                                    .DataSource(Model.SaleSlapseDays)
+                                                                                                                                    .ColumnAutoWidth(true).AllowColumnResizing(true).ColumnResizingMode(ColumnResizingMode.Widget)
+                                                                                                                                    .Columns(c =>
+                                                                                                                                    {
+
+                                                                                                                                        c.Add().Caption("Deal Size Group").CellTemplate(@<text>
+                                                                                                                                            @(Html.DevExtreme().TextBox().Value(new JS("data.DealSizeBandId")).InputAttr(new { @class = "disable-txt" }))
+                                                                                                                                        </text>);
+                                                                                                                                                c.Add().Caption("Sales Lapse Days").CellTemplate(@<text>
+                                                                                                                                                    @(Html.DevExtreme().TextBox().InputAttr(new { @class = "disable-txt txt-sales-lp-days" }))
+                                                                                                                                                </text>).CssClass("td-sales-lp-days");
+                                                                                                                                                        c.Add().Caption("Close To Book").CellTemplate(@<text>
+                                                                                                                                                            @(Html.DevExtreme().TextBox().InputAttr(new { @class = "disable-txt txt-close-to-book" }))
+                                                                                                                                                        </text>);
+                                                                                                                                                                c.Add()
+                                                                                                                            .Caption("Base Sales Cycle Estimate").CssClass("sce-by-total-star")
+                                                                                                                            .Alignment(HorizontalAlignment.Center)
+                                                                                                                                .Columns(b =>
+                                                                                                                                {
+                                                                                                                                                                        b.Add().Caption("Total Days").CellTemplate(@<text>
+                                                                                                                                                                            @(Html.DevExtreme().TextBox().InputAttr(new { @class = "disable-txt txt-total-days" }))
+                                                                                                                                                                        </text>);
+                                                                                                                                                                                b.Add().Caption("Total Weeks").CellTemplate(@<text>
+                                                                                                                                                                                    @(Html.DevExtreme().TextBox().InputAttr(new { @class = "disable-txt txt-total-weeks" }))
+                                                                                                                                                                                </text>);
+                                                                                                                                                                                        b.Add().Caption("Total Months").CellTemplate(@<text>
+                                                                                                                                                                                            @(Html.DevExtreme().TextBox().InputAttr(new { @class = "disable-txt txt-total-months" }))
+                                                                                                                                                                                        </text>);
+                                                                                                                                                                                            });
+                                                                                                                                                                                        c.Add()
+                                                                                                                                                                    .Caption("Sales Cycle Estimate with Extension by Total Stars Range").CssClass("sce-by-total-star")
+                                                                                                                                                                    .Alignment(HorizontalAlignment.Center)
+                                                                                                                                                                        .Columns(a =>
+                                                                                                                                                                        {
+                                                                                                                                                                                                                                        a.Add().Caption("15").Alignment(HorizontalAlignment.Right).CellTemplate(@<text>
+                                                                                                                                                                                                                                            @(Html.DevExtreme().TextBox().InputAttr(new { @class = "disable-txt txt-star-range-15" }))
+                                                                                                                                                                                                                                        </text>);
+                                                                                                                                                                                                                                                a.Add().Caption("12 - 14").Alignment(HorizontalAlignment.Right).CellTemplate(@<text>
+                                                                                                                                                                                                                                                    @(Html.DevExtreme().TextBox().InputAttr(new { @class = "disable-txt txt-star-range-12-14" }))
+                                                                                                                                                                                                                                                </text>);
+                                                                                                                                                                                                                                                        a.Add().Caption("9 - 11").Alignment(HorizontalAlignment.Right).CellTemplate(@<text>
+                                                                                                                                                                                                                                                            @(Html.DevExtreme().TextBox().InputAttr(new { @class = "disable-txt txt-star-range-9-11" }))
+                                                                                                                                                                                                                                                        </text>);
+                                                                                                                                                                                                                                                                a.Add().Caption("6 - 8").Alignment(HorizontalAlignment.Right).CellTemplate(@<text>
+                                                                                                                                                                                                                                                                    @(Html.DevExtreme().TextBox().InputAttr(new { @class = "disable-txt txt-star-range-6-8" }))
+                                                                                                                                                                                                                                                                </text>);
+                                                                                                                                                                                                                                                                        a.Add().Caption("3 - 5").Alignment(HorizontalAlignment.Right).CellTemplate(@<text>
+                                                                                                                                                                                                                                                                            @(Html.DevExtreme().TextBox().InputAttr(new { @class = "disable-txt txt-star-range-3-5" }))
+                                                                                                                                                                                                                                                                        </text>);
+                                                                                                                                                                                                                                                                            });
+                                                                                                                                                                                                                                c.AddFor(m => m.DealSizeBandId).Caption("Deal Size Group").CssClass("hiddencol");
+                                                                                                                                                                                                                            }).OnCellPrepared("onCellPrepared")
+
+
+        )
+    </div>
+    <div class="footer-btn">
+        @(Html.DevExtreme().Button().ID("SalsecycleEstimate-calc-btn").Text("Calculate").OnClick("CalculateSCE").ElementAttr(new { @class = "from-input" }))
+
+    </div>
+}
+
+@*New Code Start*@
+<div class="pannel">
+    @(Html.DevExtreme().Accordion()
+                                                                                                                                                            .ID("SalesCycleEstimatetoPraposals")
+                                                                                                                                                            .DataSource(new[] {
+new { title = "Apply Sales Cycle Estimate to Proposals "}
+                                                                                                                                                            })
+                                                                                                                                                            .Collapsible(true)
+                                                                                                                                                            .DeferRendering(false)
+                                                                                                                                                            .Multiple(true)
+                                                                                                                                                            .ItemTemplate(@<text>
+                                                                                                                                                                @SalesCycleEstimatetoPraposalsPnl()
+                                                                                                                                                            </text>)
+    )
+</div>
+
+@helper SalesCycleEstimatetoPraposalsPnl()
+{
+    /**/
+    <div class="content-title">Click 'View Details' to view the proposals' Sales Cycle Estimate days and compare. Click 'Apply' to commit them to the database.</div>
+    <div class="row">
+
+        <div class="grd-title">TPC Safari Recommendation Proposals</div>
+        <div class="col-md-12 grd-proposal-count">
+            @*<div class="col-md-6" style="margin-left: 0">*@
+            @(Html.DevExtreme().DataGrid<SCEResult_OneDto>().ID("ProposalCount_One")
+                                                                .Width("100%")
+                                                                /*.Height("100%")*//*226*/
+                                                                .RowAlternationEnabled(true)
+                                                                .DataSource(Model.ProposalCount_OneViewModel)
+                                                                .ColumnAutoWidth(true).AllowColumnResizing(true).ColumnResizingMode(ColumnResizingMode.Widget)
+                                                                .Columns(c =>
+                                                                {
+                                                            //c.AddFor(m => m.Name).Caption("Name").CssClass("start-name");
+                                                            c.Add().Caption("Proposal Count").CssClass("sce-by-total-star-proposals")
+                                                                                .Alignment(HorizontalAlignment.Center)
+                                                                                .Columns(a =>
+                                                                                {
+                                                                                    a.AddFor(m => m.SCE_Days).Caption("SCE (days)").CssClass("start-name").Alignment(HorizontalAlignment.Right);
+                                                                                    a.AddFor(m => m.Stars_5_First).Caption("5-Stars").Alignment(HorizontalAlignment.Right);
+                                                                                    a.AddFor(m => m.Stars_4_First).Caption("4-Stars").Alignment(HorizontalAlignment.Right);
+                                                                                    a.AddFor(m => m.Stars_3_First).Caption("3-Stars").Alignment(HorizontalAlignment.Right);
+                                                                                    a.AddFor(m => m.Stars_2_First).Caption("2-Stars").Alignment(HorizontalAlignment.Right);
+                                                                                    a.AddFor(m => m.Stars_1_First).Caption("1-Star").Alignment(HorizontalAlignment.Right);
+                                                                                    a.AddFor(m => m.Total).Caption("Total").Alignment(HorizontalAlignment.Right);
+                                                                                });
+                                                                    c.Add().Caption("Proposal Count(%)").CssClass("sce-by-total-star-proposals")
+                                                                                .Alignment(HorizontalAlignment.Center)
+                                                                                .Columns(a =>
+                                                                                {
+                                                                                    a.AddFor(m => m.Stars_5_Second).Caption("5-Stars").Alignment(HorizontalAlignment.Right);
+                                                                                    a.AddFor(m => m.Stars_4_Second).Caption("4-Stars").Alignment(HorizontalAlignment.Right);
+                                                                                    a.AddFor(m => m.Stars_3_Second).Caption("3-Stars").Alignment(HorizontalAlignment.Right);
+                                                                                    a.AddFor(m => m.Stars_2_Second).Caption("2-Stars").Alignment(HorizontalAlignment.Right);
+                                                                                    a.AddFor(m => m.Stars_1_Second).Caption("1-Star").Alignment(HorizontalAlignment.Right);
+                                                                                    a.AddFor(m => m.Total_1).Caption("Total").Alignment(HorizontalAlignment.Right);
+                                                                                });
+
+                                                                })
+
+            )
+        </div>
+    </div>
+
+
+    <div class="row">
+        <div class="grd-title">All Proposals</div>
+        <div class="col-md-12 grd-proposal-count">
+            @*<div class="col-md-6" style="margin-left: 0">*@
+            @(Html.DevExtreme().DataGrid<SCEResult_TwoDto>().ID("ProposalCount_Two")
+                                                                .Width("100%")
+                                                                /*.Height("100%")*//*226*/
+                                                                .RowAlternationEnabled(true)
+                                                                .DataSource(Model.ProposalCount_TwoViewModel)
+                                                                .ColumnAutoWidth(true).AllowColumnResizing(true).ColumnResizingMode(ColumnResizingMode.Widget)
+                                                                .Columns(c =>
+                                                                {
+                                                            //c.AddFor(m => m.Name).Caption("Name").CssClass("start-name");
+                                                            c.Add().Caption("Proposal Count").CssClass("sce-by-total-star-proposals")
+                                                                                .Alignment(HorizontalAlignment.Center)
+                                                                                .Columns(a =>
+                                                                                {
+                                                                                    a.AddFor(m => m.SCE_Days).Caption("SCE (days)").CssClass("start-name").Alignment(HorizontalAlignment.Right);
+                                                                                    a.AddFor(m => m.Stars_5_First).Caption("5-Stars").Alignment(HorizontalAlignment.Right);
+                                                                                    a.AddFor(m => m.Stars_4_First).Caption("4-Stars").Alignment(HorizontalAlignment.Right);
+                                                                                    a.AddFor(m => m.Stars_3_First).Caption("3-Stars").Alignment(HorizontalAlignment.Right);
+                                                                                    a.AddFor(m => m.Stars_2_First).Caption("2-Stars").Alignment(HorizontalAlignment.Right);
+                                                                                    a.AddFor(m => m.Stars_1_First).Caption("1-Star").Alignment(HorizontalAlignment.Right);
+                                                                                    a.AddFor(m => m.Total).Caption("Total").Alignment(HorizontalAlignment.Right);
+                                                                                });
+                                                                    c.Add().Caption("Proposal Count(%)").CssClass("sce-by-total-star-proposals")
+                                                                                .Alignment(HorizontalAlignment.Center)
+                                                                                .Columns(a =>
+                                                                                {
+                                                                                    a.AddFor(m => m.Stars_5_Second).Caption("5-Stars").Alignment(HorizontalAlignment.Right);
+                                                                                    a.AddFor(m => m.Stars_4_Second).Caption("4-Stars").Alignment(HorizontalAlignment.Right);
+                                                                                    a.AddFor(m => m.Stars_3_Second).Caption("3-Stars").Alignment(HorizontalAlignment.Right);
+                                                                                    a.AddFor(m => m.Stars_2_Second).Caption("2-Stars").Alignment(HorizontalAlignment.Right);
+                                                                                    a.AddFor(m => m.Stars_1_Second).Caption("1-Star").Alignment(HorizontalAlignment.Right);
+                                                                                    a.AddFor(m => m.Total_1).Caption("Total").Alignment(HorizontalAlignment.Right);
+                                                                                });
+
+                                                                })
+
+            )
+        </div>
+    </div>
+
+
+    <div class="footer-btn">
+        @(Html.DevExtreme().Button().ID("btnPreview").Text("Preview").ElementAttr(new { @class = "from-input" }))
+        @*@(Html.DevExtreme().Button().ID("btnPrint").Text("Print").ElementAttr(new { @class = "from-input" }))*@
+        @*@(Html.DevExtreme().Button().ID("btnViewDetails").Text("View Details").ElementAttr(new { @class = "from-input" }).OnClick("btnViewDetailsClick"))*@
+        @(Html.DevExtreme().Button().ID("btnApply").Text("Apply").ElementAttr(new { @class = "from-input" }).OnClick("btnApplyClick"))
+    </div>
+}
+@*@(Html.DevExtreme().Button().ID("btnSaveModel").Text("Save Model").ElementAttr(new { @class = "from-input" }))
+@(Html.DevExtreme().Button().ID("btnPrint").Text("Print").ElementAttr(new { @class = "from-input" }))*@
+@*New Code End*@
+<script type="text/javascript">
+
+    $(document).ready(function () {
+        //debugger;
+        var lastRow = $("#CloseToBook table")[1];
+
+        $(lastRow).find("tr:last").prev().find("td:last input").attr("disabled", "disabled");
+        $(lastRow).find("tr:last").prev().find("td:last input").addClass("disable-txt");
+
+
+    });
+
+
+   /* function SalesLapseDays_all_row_calc(args) {
+        debugger;
+        var grid = $('#SalesLapseDays').dxDataGrid('instance');
+        var max_rows = grid.totalCount();
+
+        var tableData = $("#SalesLapseDays table")[1];
+
+        for (var i = 0; i <= max_rows; i++)
+        {
+            var numberSalesCall = parseInt($(tableData).find("tr:eq(" + i + ")").find("td").eq(1).find("input.dx-texteditor-input").val());
+            var calGapDays = parseInt($(tableData).find("tr:eq(" + i + ")").find("td").eq(2).find("input.dx-texteditor-input").val());
+            var salesLapseDays = parseInt(numberSalesCall + (numberSalesCall - 1) * calGapDays);
+            $(tableData).find("tr:eq(" + i + ")").find("td").eq(3).find("input.dx-texteditor-input").val(salesLapseDays);
+        }
+
+
+    }
+    */
+
+
+    function SaveSalesLapseDays() {
+        if (ValidateSLD_Grid()) {
+            var grid = $('#SalesLapseDays').dxDataGrid('instance');
+            var max_rows = grid.totalCount();
+            var tableData = $("#SalesLapseDays table")[1];
+            var salesLapseDaysList = [];
+
+            for (var i = 0; i < max_rows; i++) {
+                var dealId = $(tableData).find("tr:eq(" + i + ")").find("td.deal-id").text();
+                var dealSizeGroup = $(tableData).find("tr:eq(" + i + ")").find("td.deal-size-id").text();
+                var numberSalesCall = parseInt($(tableData).find("tr:eq(" + i + ")").find("td.number-sales-calls-id").find("input.dx-texteditor-input").val());
+                var calGapDays = parseInt($(tableData).find("tr:eq(" + i + ")").find("td.call-gap-days-id").find("input.dx-texteditor-input").val());
+                var salesLapseDays = parseInt($(tableData).find("tr:eq(" + i + ")").find("td.sales-lapse-days-id").find("input.dx-texteditor-input").val());
+
+                var salesLapseDaysObj = {};
+                salesLapseDaysObj.Id = dealId;
+                //salesLapseDaysObj.DealSizeBandId = dealSizeGroup;
+                salesLapseDaysObj.SalesCallsSavedValue = numberSalesCall;
+                salesLapseDaysObj.CallGapDaysSavedValue = calGapDays;
+                //salesLapseDaysObj.SalesLapseDays = salesLapseDays;
+                salesLapseDaysList.push(salesLapseDaysObj);
+            }
+
+            $.ajax({
+                url: '@Url.Action("SaveSalesLapseDays", "Home")',
+                data: { salesLapseDaysList: salesLapseDaysList },
+                type: 'POST',
+                success: function () {
+                    DevExpress.ui.dialog.alert("Click 'Calculate' to re-calculate Sales Cycle Estimate, and then click 'Apply' to attach the re-calculated SCE to each proposal.", "Value have been saved.");
+                },
+                error: function (err, er1, er2) {
+
+                }
+            });
+
+        }
+    }
+    function ValidateSLD_Grid() {
+        var sldChk = true;
+        var cntsalescalles = $("#SalesLapseDays").find('.number-sales-calls-id').find("input[type='text']").filter(function (obj) {
+            return ($(this).val().trim() === "");
+        });
+        if (cntsalescalles.length) {
+            DevExpress.ui.dialog.alert("Value is not provided or invalid.", "");
+            return false;
+        }
+        var cntgapdays = $("#SalesLapseDays").find('.call-gap-days-id').find("input[type='text']").filter(function (obj) {
+            return ($(this).val().trim() === "");
+        });
+        if (cntgapdays.length) {
+            DevExpress.ui.dialog.alert("Value is not provided or invalid.", "");
+            return false;
+        }
+        return sldChk;
+    }
+    //
+    function SaveCloseToBook() {
+        if (ValidateCTB_Grid()) {
+            var grid = $('#CloseToBook').find('.dx-data-row');
+            var closeToBookList = [];
+            $.each(grid, function () {
+                var closeToBookObj = {};
+                var closetobookid = $(this).find('.closetobookid').text();
+                var savedValue = $(this).find('.close-days').find("input[type='text']").val();
+                closeToBookObj.Id = closetobookid;
+                closeToBookObj.SavedValue = savedValue;
+                closeToBookList.push(closeToBookObj);
+            });
+
+            $.ajax({
+                url: '@Url.Action("SaveCloseToBook", "Home")',
+                data: { closeToBookList: closeToBookList },
+                type: 'POST',
+                success: function () {
+                    DevExpress.ui.dialog.alert("Click 'Calculate' to re-calculate Sales Cycle Estimate, and then click 'Apply' to attach the re-calculated SCE to each proposal.", "Value have been saved.");
+                },
+                error: function (err, er1, er2) {
+
+                }
+            });
+        }
+    }
+    function ValidateCTB_Grid() {
+        var sldChk = true;
+        var cntsalescalles = $("#CloseToBook").find('.close-days').find("input[type='text']").filter(function (obj) {
+            return ($(this).val().trim() === "");
+        });
+        if (cntsalescalles.length) {
+            DevExpress.ui.dialog.alert("Value is not provided or invalid.", "");
+            return false;
+        }
+        return sldChk;
+    }
+    function SaveSCEExt() {
+        if (ValidateSCEt_Grid()) {
+            var grid = $('#SalesCycleExtension').find('.dx-data-row');
+            var SCEExtList = [];
+            $.each(grid, function () {
+                var SCEExtObj = {};
+                var SCEExtObjid = $(this).find('.salescycleextensionidcls').text();
+                var savedValue = $(this).find('.SCExt').find("input[type='text']").val();
+                SCEExtObj.Id = SCEExtObjid;
+                SCEExtObj.SavedValue = savedValue;
+                SCEExtList.push(SCEExtObj);
+            });
+
+            $.ajax({
+                url: '@Url.Action("SaveSCEExt", "Home")',
+                data: { sCEExtList: SCEExtList },
+                type: 'POST',
+                success: function () {
+                    DevExpress.ui.dialog.alert("Click 'Calculate' to re-calculate Sales Cycle Estimate, and then click 'Apply' to attach the re-calculated SCE to each proposal.", "Value have been saved.");
+                },
+                error: function (err, er1, er2) {
+
+                }
+            });
+        }
+    }
+    function ValidateSCEt_Grid() {
+        var sldChk = true;
+        var cntsalescalles = $("#SalesCycleExtension").find('.SCExt').find("input[type='text']").filter(function (obj) {
+            return ($(this).val().trim() === "");
+        });
+        if (cntsalescalles.length) {
+            DevExpress.ui.dialog.alert("Value is not provided or invalid.", "");
+            return false;
+        }
+        return sldChk;
+    }
+    function ResetSaleslapsedays() {
+        ResetData(1);
+    }
+    function ResetCloseToBook() {
+        ResetData(2);
+    }
+    function ResetSCEEt() {
+        ResetData(3);
+    }
+
+    function ResetData(sectionId) {
+
+        $.ajax({
+            url: '@Url.Action("ResetData", "Home")',
+            data: { sectionId: sectionId },
+            type: 'POST',
+            dataType: 'json',
+            success: function (dt) {
+
+                if (sectionId == 1) {
+                    //Saleslapsedays
+                    var salesData = dt.SaleSlapseDays;
+                    $('#SalesLapseDays').dxDataGrid('instance').option('dataSource', salesData);
+                    $('#SalesLapseDays').dxDataGrid('instance')._render();
+                }
+                else if (sectionId == 2) {
+                    //CloseToBook
+                    var closetobookData = dt.CloseToBook;
+                    $('#CloseToBook').dxDataGrid('instance').option('dataSource', closetobookData);
+                    $('#CloseToBook').dxDataGrid('instance')._render();
+
+                }
+                else if (sectionId == 3) {
+                    //SCEEt
+                    var scetData = dt.SalesCycleExtension;
+                    $('#SalesCycleExtension').dxDataGrid('instance').option('dataSource', scetData);
+                    $('#SalesCycleExtension').dxDataGrid('instance')._render();
+                }
+            },
+            error: function (err, er1, er2) {
+
+            }
+        });
+    }
+    function closeToBook_grid_prepared(info) {
+        var lastRow = $("#CloseToBook table")[1];
+        //$(lastRow).find("tr:last").prev().find("td:last input").attr("disabled", "disabled");
+        //$(lastRow).find("tr:last").prev().find("td:last input").addClass("disable-txt");
+        $("#CloseToBook").find("tr:last").prev('tr').find("input[type='text']").attr("disabled", "disabled");
+        $("#CloseToBook").find("tr:last").prev('tr').find("input[type='text']").addClass("disable-txt ctb-total");
+    }
+
+    function stars_grid_prepared(info) {
+
+
+        var starsTableData = $("#Stars table")[1];
+        $(starsTableData).find("tr").find("td input").attr("disabled", "disabled");
+        $(starsTableData).find("tr").find("td input").addClass("disable-txt");
+        $(starsTableData).find("tr:last").prev().prev().find("td").addClass("totalStars");
+        // $(starsTableData).find("tr:last").prev().find("td input").addClass("totalStars-txt");
+
+
+        //}
+
+
+    }
+
+
+    //debugger;
+    //var tableData = $("#SalesLapseDays table")[1];
+    //var input = $(tableData).find("tr:first").find("td:first input");
+    //$(input).change(function () {
+    //    alert("This input field has lost its focus.");
+    //});
+    function GetNumberSalesCalls(data) {
+        return data.SalesCallsSavedValue;
+    }
+
+    function GetCallGapDays(data) {
+        return data.CallGapDaysSavedValue;
+    }
+    function GetSalesLapseDays(data) {
+        return data.SalesLapseDays;
+    }
+
+    function GetCloseToBookDays(data) {
+        return data.DefaultValue;
+    }
+    function GetSalesCycleExtensionDefaultVal(data) {
+        return data.DefaultValue;
+    }
+    function SumOfDays(data) {
+        return 1;
+    }
+
+    function GetStarsCol1Val(data) {
+        return data.Col1;
+    }
+    function GetStarsCol2Val(data) {
+        return data.Col2;
+    }
+    function GetStarsCol3Val(data) {
+        return data.Col3;
+    }
+    function GetStarsCol4Val(data) {
+        return data.Col4;
+    }
+    function GetStarsCol5Val(data) {
+        return data.Col5;
+    }
+    function daycount(data) {
+
+        var grid = $('#CloseToBook').dxDataGrid('instance');
+        var max_rows = grid.totalCount();
+        while (grid.pageIndex() < grid.pageCount() - 1) {
+            grid.pageIndex(grid.pageIndex() + 1);
+            resize_committed = true;
+        }
+        //alert(grid.selectRowsByIndexes(max_rows - 1));
+
+        //alert(grid.option('selectedRowKeys')[0]);
+        //alert(max_rows);
+    }
+
+    function GetCalcByCallDaysGaps(args) {
+
+        //debugger;
+        var calGapDays = parseInt(args.value);
+        var numberSalesCall = parseInt(args.element.parents("tr").find("td.number-sales-calls-id").find("input.dx-texteditor-input").val());
+        var salesLapseDays = numberSalesCall + (numberSalesCall - 1) * calGapDays;
+        if (isNaN(parseFloat(salesLapseDays))) {
+            salesLapseDays = "";
+        }
+        args.element.parents("tr").find("td.sales-lapse-days-id").find("input.dx-texteditor-input").val(salesLapseDays)
+    }
+
+    function CalculateCloseToBookTotal(args) {
+
+        var totalCloseToBook = 0;
+        $.each(args.element.parents("table").find("input.dx-texteditor-input:not(:last)"), function (index, value) {
+            totalCloseToBook = totalCloseToBook + parseInt($(this).val());
+        })
+        if (isNaN(parseFloat(totalCloseToBook))) {
+            totalCloseToBook = "";
+        }
+        args.element.parents("table").find("input.dx-texteditor-input:last")[0].value = totalCloseToBook;
+    }
+
+    function GetCalcByNumberSalesCalls(args) {
+        var numberSalesCall = parseInt(args.value);
+        var calGapDays = parseInt(args.element.parents("tr").find("td.call-gap-days-id").find("input.dx-texteditor-input").val());
+        var salesLapseDays = numberSalesCall + (numberSalesCall - 1) * calGapDays;
+        args.element.parents("tr").find("td.sales-lapse-days-id").find("input.dx-texteditor-input").val(salesLapseDays)
+    }
+    function onCellPrepared(e) {
+        //debugger;
+        if (e.rowType == "data") {
+            e.cellElement.attr({ dealsizeid: e.data.DealSizeBandId });
+        }
+    }
+    function onCellPreparedSalesCycleExtension(e) {
+        //debugger;
+        if (e.rowType == "data") {
+
+            e.cellElement.attr({ salescycleextensionid: e.data.Name });
+        }
+    }
+
+
+
+    function CalculateSCE() {
+        DevExpress.ui.dialog.alert("Sales Cycle Estimate has been recalculated.", "");
+        var allTr = $("#SalesLapseDays").find('.deal-size-id');
+        $.each(allTr, function () {
+
+            //Calculate SalesLapseDays
+            if ($(this).closest('.dx-data-row').length == 1) {
+                var curRowDays = $(this).closest('.dx-data-row').find('.sales-lp-days').val();
+                var id = $(this).text();
+                if (isNaN(parseInt(curRowDays))) {
+                    curRowDays = 0;
+                }
+                $("#SalsecycleEstimate").find(".td-sales-lp-days[dealsizeid='" + id + "']").find('.txt-sales-lp-days').val(parseInt(curRowDays));
+            }
+
+        });
+
+        // Calculate CloseToBook
+        var tbl = $("#CloseToBook table")[1];
+        $(".txt-close-to-book").val($("#CloseToBook table").find('.dx-data-row:last').find("input[type='text']").val());
+
+        // Calculate TotalDays, TotalWeeks and TotalMonths
+        var allSceRows = $("#SalsecycleEstimate").find('.dx-data-row');
+        $.each(allSceRows, function () {
+            if ($(this).find('.txt-sales-lp-days').length == 1 && $(this).find('.txt-close-to-book').length == 1) {
+
+                var sld = parseInt($(this).find('.txt-sales-lp-days').val());
+                var ctb = parseInt($(this).find('.txt-close-to-book').val());
+                var totalDays = sld + ctb;
+                var totalWeeks = totalDays / 7;
+                var totalMonths = totalDays / 30;
+                if (isNaN(parseFloat(totalDays))) {
+                    totalDays = 0;
+                }
+                if (isNaN(parseFloat(totalWeeks))) {
+                    totalWeeks = 0;
+                }
+                if (isNaN(parseFloat(totalMonths))) {
+                    totalMonths = 0;
+                }
+                $(this).find('.txt-total-days').val(totalDays);
+                $(this).find('.txt-total-weeks').val(parseFloat(totalWeeks).toFixed(2));
+                $(this).find('.txt-total-months').val(parseFloat(totalMonths).toFixed(2));
+
+                //(SalesLapseDays + CloseToBook) * (1 + SalesCycleExtension)
+                // Star 15
+                if ($("#SalesCycleExtension").find("td[class*='SCExt'][salescycleextensionid='15']").length > 0) {
+                    var sce15 = parseFloat($("#SalesCycleExtension").find("td[class*='SCExt'][salescycleextensionid='15']").find("input[type='text']").val());
+                    sce15 = sce15 / 100;
+                    var star15 = (sld + ctb) * (1 + sce15);
+                    if (isNaN(parseFloat(star15))) {
+                        star15 = 0;
+                    }
+                    $(this).find('.txt-star-range-15').val(parseFloat(star15).toFixed(2));
+                }
+
+                // Star 12-14
+                if ($("#SalesCycleExtension").find("td[class*='SCExt'][salescycleextensionid='12-14']").length == 1) {
+                    var sce12To14 = parseFloat($("#SalesCycleExtension").find("td[class*='SCExt'][salescycleextensionid='12-14']").find("input[type='text']").val());
+                    sce12To14 = sce12To14 / 100;
+                    var star12To14 = (sld + ctb) * (1 + sce12To14);
+                    if (isNaN(parseFloat(star12To14))) {
+                        star12To14 = 0;
+                    }
+                    $(this).find('.txt-star-range-12-14').val(parseFloat(star12To14).toFixed(2));
+                }
+
+
+                // Star 9-11
+                if ($("#SalesCycleExtension").find("td[class*='SCExt'][salescycleextensionid='9-11']").length == 1) {
+                    var sce9To11 = parseFloat($("#SalesCycleExtension").find("td[class*='SCExt'][salescycleextensionid='9-11']").find("input[type='text']").val());
+                    sce9To11 = sce9To11 / 100;
+                    var star9To11 = (sld + ctb) * (1 + sce9To11);
+                    if (isNaN(parseFloat(star9To11))) {
+                        star9To11 = 0;
+                    }
+                    $(this).find('.txt-star-range-9-11').val(parseFloat(star9To11).toFixed(2));
+                }
+
+                // Star 6-8
+                if ($("#SalesCycleExtension").find("td[class*='SCExt'][salescycleextensionid='6-8']").length == 1) {
+                    var sce6To8 = parseFloat($("#SalesCycleExtension").find("td[class*='SCExt'][salescycleextensionid='6-8']").find("input[type='text']").val());
+                    sce6To8 = sce6To8 / 100;
+                    var star6To8 = (sld + ctb) * (1 + sce6To8);
+                    if (isNaN(parseFloat(star6To8))) {
+                        star6To8 = 0;
+                    }
+                    $(this).find('.txt-star-range-6-8').val(parseFloat(star6To8).toFixed(2));
+                }
+
+                // Star 3-5
+                if ($("#SalesCycleExtension").find("td[class*='SCExt'][salescycleextensionid='3-5']").length == 1) {
+                    var sce3To5 = parseFloat($("#SalesCycleExtension").find("td[class*='SCExt'][salescycleextensionid='3-5']").find("input[type='text']").val());
+                    sce3To5 = sce3To5 / 100;
+                    var star3To5 = (sld + ctb) * (1 + sce3To5);
+                    if (isNaN(parseFloat(star3To5))) {
+                        star3To5 = 0;
+                    }
+                    $(this).find('.txt-star-range-3-5').val(parseFloat(star3To5).toFixed(2));
+                }
+            }
+        });
+    }
+
+    function btnApplyClick() {
+        var result = DevExpress.ui.dialog.confirm("Sales Cycle Estimate will be applied to each proposal. You will be sent an email when it's finished. Do you want to continue?", "");
+        result.done(function (dialogResult) {
+            //alert(dialogResult ? "Confirmed" : "Canceled");
+            if (dialogResult) {
+                $.ajax({
+                    url: '@Url.Action("ApplySCE", "Home")',
+                    data: {},
+                    type: 'POST',
+                    dataType:'json',
+                    success: function (data) {
+                        //if (data == "1") {
+                        //    DevExpress.ui.dialog.alert("Applied successfully.", "");
+                        //}
+                        //else {
+                        //    DevExpress.ui.dialog.alert("Some error occurred.", "");
+                        //}
+                        DevExpress.ui.dialog.alert("Applied successfully.", "");
+                    },
+                    error: function (err, er1, er2) {
+
+                    }
+                });
+            }
+        });
+
+    }
+    function btnViewDetailsClick() {
+        //window.location.href = "/Home/SCEViewDetails";
+    }
+</script>
